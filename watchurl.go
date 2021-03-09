@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -27,28 +28,43 @@ import (
 var (
 	stateDir    = flag.String("state-dir", "~/.watchurl/", "directory where to cache site contents")
 	every       = flag.Duration("repeat-every", 0, "keep running, checking at this interval")
-	jitter      = flag.Duration("jitter", 5*time.Minute, "random jitter, if --repeat-every is used")
+	jitter      = flag.Duration("jitter", 2*time.Minute, "random jitter, if --repeat-every is used")
 	macNotify   = flag.Bool("macos-notify", false, "(macOS only) display a desktop notification when updated")
 	logFullDiff = flag.Bool("log-full-diff", false, "Write the full diff to glog (otherwise write it to stdout)")
 )
 
 func main() {
 	flag.Parse()
+	urls := flag.Args()
+
+	if runtime.GOOS == "darwin" && !flagIsSet("macos-notify") {
+		flag.Set("macos-notify", "1")
+	}
+
+	if !(flagIsSet("logtostderr") || flagIsSet("alsologtostderr")) && *logFullDiff {
+		flag.Set("alsologtostderr", "1")
+	}
+
+	if *every > 0 {
+		glog.Infof("Will check %d URLs for updates every %v (+ jitter up to %v)", len(urls), *every, *jitter)
+	} else {
+		glog.Infof("Will check %d URLs for updates ONCE (use --repeat-every to keep checking)", len(urls))
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	// Buffered to two values, because a SIGTERM might come from the system, or
 	// when all the goroutines finish, and we only drain the channel once, so
 	// one of those might theoretically block.
 	ch := make(chan os.Signal, 2)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	args := flag.Args()
 
 	// There are two ways to shut down. Firstly, if we get SIGTERM, then ch will
 	// unblock, we then cancel the context and wait for done to close. Secondly,
 	// if all the goroutines finish before SIGTERM (because *every == 0), then
 	// both ch and done will unblock and we'll shut down immediately.
 	var wg sync.WaitGroup
-	wg.Add(len(args))
-	for _, addr := range args {
+	wg.Add(len(urls))
+	for _, addr := range urls {
 		go func(addr string) {
 			defer wg.Done()
 			watch(ctx, addr, *every, *jitter)
@@ -66,6 +82,16 @@ func main() {
 	glog.Info("Shutting down...")
 	cancel()
 	<-done
+}
+
+func flagIsSet(name string) bool {
+	isSet := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			isSet = true
+		}
+	})
+	return isSet
 }
 
 // watch diffs the text of the website at the given url against the last
@@ -115,7 +141,7 @@ func watch(ctx context.Context, addr string, every, jitter time.Duration) {
 				glog.V(1).Infof("No change in %s", addr)
 			}
 
-			if every == 0 {
+			if every <= 0 {
 				glog.Info("Bailing after a successful check (use --repeat-every to repeat automatically)")
 				return
 			}
