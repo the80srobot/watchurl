@@ -1,0 +1,24 @@
+# github.com/andybrewer/mack v0.0.0-20200226161639-15be3d47cc54
+## explicit
+github.com/andybrewer/mack
+# github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+## explicit
+github.com/golang/glog
+# github.com/mattn/go-runewidth v0.0.9
+github.com/mattn/go-runewidth
+# github.com/olekukonko/tablewriter v0.0.5
+## explicit
+github.com/olekukonko/tablewriter
+# github.com/sergi/go-diff v1.1.0
+## explicit
+github.com/sergi/go-diff/diffmatchpatch
+# github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf
+## explicit
+github.com/ssor/bom
+# golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
+## explicit
+golang.org/x/net/html
+golang.org/x/net/html/atom
+# jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
+## explicit
+jaytaylor.com/html2text
