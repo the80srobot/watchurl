@@ -1,3 +1,4 @@
+// watchurl checks a URL for updates and logs a pretty diff.
 package main
 
 import (
@@ -29,16 +30,25 @@ var (
 	stateDir    = flag.String("state-dir", "~/.watchurl/", "directory where to cache site contents")
 	every       = flag.Duration("repeat-every", 0, "keep running, checking at this interval")
 	jitter      = flag.Duration("jitter", 2*time.Minute, "random jitter, if --repeat-every is used")
-	macNotify   = flag.Bool("macos-notify", false, "(macOS only) display a desktop notification when updated")
+	macNotify   = flag.Bool("macos-notify", true, "(macOS only) display a desktop notification when updated")
 	logFullDiff = flag.Bool("log-full-diff", false, "Write the full diff to glog (otherwise write it to stdout)")
 )
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] URLS...\n\n", os.Args[0])
+		fmt.Fprint(os.Stderr, "Monitors URLs for updates and outputs diffs.\n\n")
+		fmt.Fprint(os.Stderr, "EXAMPLE:\n")
+		fmt.Fprint(os.Stderr, "# Check major news outlets every 5 minutes:\n")
+		fmt.Fprintf(os.Stderr, "%s --repeat-every=5m --log-ful-diff https://theguardian.com https://nytimes.com\n\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 	urls := flag.Args()
 
-	if runtime.GOOS == "darwin" && !flagIsSet("macos-notify") {
-		flag.Set("macos-notify", "1")
+	if runtime.GOOS != "darwin" {
+		flag.Set("macos-notify", "0")
 	}
 
 	if !(flagIsSet("logtostderr") || flagIsSet("alsologtostderr")) && *logFullDiff {
