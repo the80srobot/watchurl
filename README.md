@@ -8,8 +8,10 @@ instead of `go run watchurl.go`.
 
 ## macOS notifications
 
-On macOS, watchurl shows desktop notifications when a site is updated. To
+On macOS, `watchurl` shows desktop notifications when a site is updated. To
 disable this behavior, pass `--nomacos-notify`.
+
+(Notifications don't work when running in Docker.)
 
 ## Examples
 
