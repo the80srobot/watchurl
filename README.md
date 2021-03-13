@@ -6,6 +6,11 @@ logfile. Maintains states between runs.
 Requires go 1.16. If you don't want to install it, then use `run_in_docker.sh`
 instead of `go run watchurl.go`.
 
+## macOS notifications
+
+On macOS, watchurl shows desktop notifications when a site is updated. To
+disable this behavior, pass `--nomacos-notify`.
+
 ## Examples
 
 ```sh
