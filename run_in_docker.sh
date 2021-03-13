@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p $HOME/.watchurl
+
 # This looks like it runs the build twice, but the second invocation is cached.
 # (The point of the first invocation is to show build progress on first run.)
 docker build . &&
