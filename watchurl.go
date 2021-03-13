@@ -40,7 +40,7 @@ func main() {
 		fmt.Fprint(os.Stderr, "Monitors URLs for updates and outputs diffs.\n\n")
 		fmt.Fprint(os.Stderr, "EXAMPLE:\n")
 		fmt.Fprint(os.Stderr, "# Check major news outlets every 5 minutes:\n")
-		fmt.Fprintf(os.Stderr, "%s --repeat-every=5m --log-ful-diff https://theguardian.com https://nytimes.com\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "%s --repeat-every=5m --log-full-diff https://theguardian.com https://nytimes.com\n\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 
