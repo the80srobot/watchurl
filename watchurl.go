@@ -27,11 +27,12 @@ import (
 )
 
 var (
-	stateDir    = flag.String("state-dir", "~/.watchurl/", "directory where to cache site contents")
-	every       = flag.Duration("repeat-every", 0, "keep running, checking at this interval")
-	jitter      = flag.Duration("jitter", 2*time.Minute, "random jitter, if --repeat-every is used")
-	macNotify   = flag.Bool("macos-notify", true, "(macOS only) display a desktop notification when updated")
-	logFullDiff = flag.Bool("log-full-diff", false, "Write the full diff to glog (otherwise write it to stdout)")
+	stateDir       = flag.String("state-dir", "~/.watchurl/", "directory where to cache site contents")
+	every          = flag.Duration("repeat-every", 0, "keep running, checking at this interval")
+	jitter         = flag.Duration("jitter", 2*time.Minute, "random jitter, if --repeat-every is used")
+	macNotify      = flag.Bool("macos-notify", true, "(macOS only) display a desktop notification when updated")
+	logFullDiff    = flag.Bool("log-full-diff", false, "Write the full diff to glog (otherwise write it to stdout)")
+	requestTimeout = flag.Duration("request-timeout", 30*time.Second, "timeout for the HTTP GET requests (0 to disable)")
 )
 
 func main() {
@@ -130,7 +131,8 @@ func watch(ctx context.Context, addr string, every, jitter time.Duration) {
 				glog.V(2).Infof("Fetching %s, then next fetch in %v + %v/%v jitter", addr, every, j, jitter)
 			}
 
-			diff, edits, err := diffURL(ctx, addr)
+			diff, edits, err := diffURLWithTimeout(ctx, *requestTimeout, addr)
+
 			if err != nil {
 				glog.Warningf("Checking %s: %v", addr, err)
 				continue
@@ -203,6 +205,20 @@ func readState(addr string) (string, error) {
 	}
 	glog.V(2).Infof("Address %s snapshot loaded from %s (%d bytes)", addr, name, len(p))
 	return string(p), nil
+}
+
+func diffURLWithTimeout(ctx context.Context, timeout time.Duration, addr string) (string, int, error) {
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, *requestTimeout)
+		defer cancel()
+	}
+
+	diff, edits, err := diffURL(ctx, addr)
+	if err == nil && ctx.Err() != nil {
+		err = fmt.Errorf("checking %s, context error: %w", addr, ctx.Err())
+	}
+	return diff, edits, err
 }
 
 func diffURL(ctx context.Context, addr string) (string, int, error) {
