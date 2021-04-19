@@ -173,6 +173,9 @@ func statePath(addr string) (string, error) {
 
 	digest := sha1.Sum([]byte(addr))
 	name := fmt.Sprintf("%s_%s", hex.EncodeToString(digest[:]), specialRE.ReplaceAllLiteralString(addr, "_"))
+	if len(name) > 127 { // Conservative limit
+		name = name[:127]
+	}
 	return filepath.Join(dir, name), nil
 }
 
@@ -181,6 +184,7 @@ func writeState(addr, text string) error {
 	if err != nil {
 		return err
 	}
+	glog.V(2).Infof("Address %s stored in %s (%d bytes)", addr, name, len(text))
 	if err := os.MkdirAll(filepath.Dir(name), 0755); err != nil {
 		return err
 	}
@@ -197,20 +201,22 @@ func readState(addr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	glog.V(2).Infof("Address %s snapshot loaded from %s (%d bytes)", addr, name, len(p))
 	return string(p), nil
 }
 
 func diffURL(ctx context.Context, addr string) (string, int, error) {
 	text, err := getURLText(ctx, addr)
 	if err != nil {
-		return "", 0, nil
+		return "", 0, err
 	}
 	old, err := readState(addr)
 	if os.IsNotExist(err) {
+		glog.Infof("First time checking %s (no previous state)", addr)
 		err = nil
 	}
 	if err != nil {
-		return "", 0, nil
+		return "", 0, err
 	}
 
 	if old == text {
