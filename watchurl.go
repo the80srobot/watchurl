@@ -31,6 +31,7 @@ var (
 	every          = flag.Duration("repeat-every", 0, "keep running, checking at this interval")
 	jitter         = flag.Duration("jitter", 2*time.Minute, "random jitter, if --repeat-every is used")
 	macNotify      = flag.Bool("macos-notify", true, "(macOS only) display a desktop notification when updated")
+	macClipboard   = flag.Bool("macos-clipboard", false, "(macOS only) put the latest URL to update in the clipboard")
 	logFullDiff    = flag.Bool("log-full-diff", false, "Write the full diff to glog (otherwise write it to stdout)")
 	requestTimeout = flag.Duration("request-timeout", 30*time.Second, "timeout for the HTTP GET requests (0 to disable)")
 )
@@ -138,17 +139,7 @@ func watch(ctx context.Context, addr string, every, jitter time.Duration) {
 				continue
 			}
 			if diff != "" {
-				if *logFullDiff {
-					glog.Infof("Site %s updated (%d edits):\n%s", addr, edits, diff)
-				} else {
-					// Avoid writing the full output to both stdout and log.
-					fmt.Printf("Site %s diff:\n%s\n", addr, diff)
-					glog.Infof("Site %s updated (%d edits)", addr, edits)
-				}
-				if *macNotify {
-					mack.Notify("Site updated", addr, fmt.Sprintf("%d edits (check console output)", edits), "Ping")
-				}
-
+				notify(addr, diff, edits)
 			} else {
 				glog.V(1).Infof("No change in %s", addr)
 			}
@@ -158,6 +149,22 @@ func watch(ctx context.Context, addr string, every, jitter time.Duration) {
 				return
 			}
 		}
+	}
+}
+
+func notify(addr, diff string, edits int) {
+	if *logFullDiff {
+		glog.Infof("Site %s updated (%d edits):\n%s", addr, edits, diff)
+	} else {
+		// Avoid writing the full output to both stdout and log.
+		fmt.Printf("Site %s diff:\n%s\n", addr, diff)
+		glog.Infof("Site %s updated (%d edits)", addr, edits)
+	}
+	if *macNotify {
+		mack.Notify("Site updated", addr, fmt.Sprintf("%d edits (check console output)", edits), "Ping")
+	}
+	if *macClipboard {
+		mack.SetClipboard(addr)
 	}
 }
 
