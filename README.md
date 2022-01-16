@@ -1,7 +1,7 @@
 # WatchURL
 
 Checks URLs for updates and prints human-readable diffs to the console or to a
-logfile. Maintains states between runs.
+logfile. Maintains state between runs.
 
 Requires go 1.16. If you don't want to install it, then use `run_in_docker.sh`
 instead of `go run watchurl.go`.
